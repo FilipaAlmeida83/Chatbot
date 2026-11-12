@@ -1,1 +1,37 @@
+import requests
+
+MODEL = "mistral"
+URL = "http://localhost:11434/api/chat"
+
+messages = [
+    {"role": "system", "content": "És um assistente útil. Responde em português."}
+]
+
+print("Chatbot iniciado. Escreve 'sair' para terminar.")
+
+while True:
+    pergunta = input("Tu: ").strip()
+
+    if pergunta.lower() in {"sair", "exit", "quit"}:
+        break
+
+    if not pergunta:
+        continue
+
+    messages.append({"role": "user", "content": pergunta})
+
+    try:
+        response = requests.post(
+            URL,
+            json={"model": MODEL, "messages": messages, "stream": False},
+            timeout=120,
+        )
+        response.raise_for_status()
+
+        resposta = response.json()["message"]["content"]
+        print(f"Bot: {resposta}")
+        messages.append({"role": "assistant", "content": resposta})
+
+    except requests.RequestException as erro:
+        print(f"Não consegui contactar o Ollama: {erro}")
 
