@@ -1,0 +1,40 @@
+from flask import Flask, render_template, request, jsonify
+import requests
+
+app = Flask(__name__)
+
+OLLAMA_URL = "http://localhost:11434/api/chat"
+MODEL = "mistral"
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+    message = (data.get("message") or "").strip()
+
+    if not message:
+        return jsonify({"reply": "Escreve uma mensagem para começar."})
+
+    payload = {
+        "model": MODEL,
+        "messages": [
+            {"role": "system", "content": "És um assistente útil. Responde em português."},
+            {"role": "user", "content": message}
+        ],
+        "stream": False
+    }
+
+    try:
+        response = requests.post(OLLAMA_URL, json=payload, timeout=120)
+        response.raise_for_status()
+        result = response.json()
+        reply = result["message"]["content"]
+        return jsonify({"reply": reply})
+    except Exception as e:
+        return jsonify({"reply": f"Erro ao falar com o Ollama: {str(e)}"})
+
+if __name__ == "__main__":
+    app.run(debug=True)
